@@ -4,7 +4,7 @@ import pandas as pd
 from scipy.linalg import block_diag
 from sklearn.covariance import LedoitWolf
 
-from Machine_Learning_for_Asset_Managers import ch2_marcenko_pastur_pdf as mp
+from mlfam.Machine_Learning_for_Asset_Managers import ch2_marcenko_pastur_pdf as mp
 
 #import cvxpy as cp
 
@@ -15,7 +15,7 @@ def formBlockMatrix(nBlocks, bSize, bCorr):
     block[range(bSize), range(bSize)] = 1 #diagonal is 1
     corr = block_diag(*([block]*nBlocks))
     return corr
-    
+
 def formTrueMatrix(nBlocks, bSize, bCorr):
     corr0 = formBlockMatrix(nBlocks, bSize, bCorr)
     corr0 = pd.DataFrame(corr0)
@@ -26,11 +26,11 @@ def formTrueMatrix(nBlocks, bSize, bCorr):
     cov0 = corr2cov(corr0, std0)
     mu0 = np.random.normal(std0, std0, cov0.shape[0]).reshape(-1,1)
     return mu0, cov0
-    
+
 def corr2cov(corr, std):
     cov = corr * np.outer(std, std)
     return cov
-    
+
 # Code snippet 2.8
 # generating the empirical covariance matrix
 def simCovMu(mu0, cov0, nObs, shrink=False):
@@ -42,7 +42,7 @@ def simCovMu(mu0, cov0, nObs, shrink=False):
     else: cov1 = np.cov(x, rowvar=0)
     return mu1, cov1
 
-# code snippet 2.9 
+# code snippet 2.9
 # Denoising of the empirical covariance matrix
 # by constant residual eigenvalue method
 def deNoiseCov(cov0, q, bWidth):
@@ -53,7 +53,7 @@ def deNoiseCov(cov0, q, bWidth):
     corr1 = mp.denoisedCorr(eVal0, eVec0, nFacts0) #denoising by constant residual eigenvalue method
     cov1 = corr2cov(corr1, np.diag(cov0)**.5)
     return cov1
-    
+
 # code snippet 2.10
 # Derive minimum-variance-portfolio
 # Returns a column vector of percentage allocations
@@ -67,13 +67,13 @@ def optPort(cov, mu = None):
     inv = np.linalg.inv(cov) #The precision matrix: contains information about the partial correlation between variables,
     #  the covariance between pairs i and j, conditioned on all other variables (https://www.mn.uio.no/math/english/research/projects/focustat/publications_2/shatthik_barua_master2017.pdf)
     ones = np.ones(shape = (inv.shape[0], 1)) # column vector 1's
-    if mu is None: 
+    if mu is None:
         mu = ones
     w = np.dot(inv, mu)
     w /= np.dot(ones.T, w) # def: w = w / sum(w) ~ w is column vector
-    
+
     return w
-    
+
 #optPort with long only curtesy of Brady Preston
 #requires: import cvxpy as cp
 '''def optPort(cov,mu=None):
@@ -87,13 +87,13 @@ def optPort(cov, mu = None):
     prob.solve(verbose=True)
     return np.array(w.value.flat).round(4)'''
 
-#According to the question 'Tangent portfolio weights without short sales?' 
+#According to the question 'Tangent portfolio weights without short sales?'
 #there is no analytical solution to the GMV problem with no short-sales constraints
 #So - set the negative weights in WGV to 0, and make w sum up to 1
 def optPortLongOnly(cov, mu = None):
     inv = np.linalg.inv(cov)
     ones = np.ones(shape = (inv.shape[0], 1)) # column vector 1's
-    if mu is None: 
+    if mu is None:
         mu = ones
     w = np.dot(inv, mu)
     w /= np.dot(ones.T, w) # def: w = w / sum(w) ~ w is column vector
@@ -102,9 +102,9 @@ def optPortLongOnly(cov, mu = None):
     wpluss = w.copy()
     wpluss[threshold] = 0
     wpluss = wpluss/np.sum(wpluss)
-    
+
     return wpluss
-    
+
 if __name__ == '__main__':
     nBlocks, bSize, bCorr = 2, 2, .5
     np.random.seed(0)
@@ -123,13 +123,12 @@ if __name__ == '__main__':
         w1.loc[i] = optPort(cov1, mu1).flatten() # add column vector w as row in w1
         w1_d.loc[i] = optPort(cov1_d, mu1).flatten() # np.sum(w1_d, axis=1) is vector of 1's. sum(np.sum(w1_d, axis=0)= nTrials
         # so minimum-variance-portfolio is 1./nTrials*(np.sum(w1_d, axis=0)) - but distribution not stationary
-    
-    min_var_port = 1./nTrials*(np.sum(w1_d, axis=0)) 
+
+    min_var_port = 1./nTrials*(np.sum(w1_d, axis=0))
     #code snippet 2.11
     w0 = optPort(cov0, None if minVarPortf else mu0) # w0 true percentage asset allocation
-    w0 = np.repeat(w0.T, w1.shape[0], axis=0) 
+    w0 = np.repeat(w0.T, w1.shape[0], axis=0)
     rmsd = np.mean((w1-w0).values.flatten()**2)**.5     #RMSE not denoised
     rmsd_d = np.mean((w1_d-w0).values.flatten()**2)**.5 #RMSE denoised
     print("RMSE not denoised:"+str( rmsd))
     print("RMSE denoised:"+str( rmsd_d))
-    

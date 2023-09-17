@@ -1,5 +1,5 @@
 import numpy as np
-import cupy  #Requires Cuda environment (and numpy). Also set CUPY_CACHE_DIR=/gpfs/gpfs0/deep/cupy, pip install cupy-cuda112
+# import cupy  #Requires Cuda environment (and numpy). Also set CUPY_CACHE_DIR=/gpfs/gpfs0/deep/cupy, pip install cupy-cuda112
 import pandas as pd
 from scipy.stats import norm, percentileofscore
 import scipy.stats as ss
@@ -34,7 +34,7 @@ def getDistMaxSR(nSims, nTrials, stdSR, meanSR):
         out_['nTrials'] = nTrials_
         out = out.append(out_, ignore_index=True)
     return out
-    
+
 # code snippet 8.2 - mean and standard deviation of the prediction errors
 def getMeanStdError(nSims0, nSims1, nTrials, stdSR=1, meanSR=0):
     #compute standard deviation of errors per nTrials
@@ -42,7 +42,7 @@ def getMeanStdError(nSims0, nSims1, nTrials, stdSR=1, meanSR=0):
     #nSims0: number of max{SR} u{sed to estimate E[max{SR}]
     #nSims1: number of errors on which std is computed
     sr0=pd.Series({i:getExpectedMaxSR(i, meanSR, stdSR) for i in nTrials})
-    sr0 = sr0.to_frame('E[max{SR}]') 
+    sr0 = sr0.to_frame('E[max{SR}]')
     sr0.index.name='nTrials'
     err=pd.DataFrame()
     for i in range(0, int(nSims1)):
@@ -56,13 +56,13 @@ def getMeanStdError(nSims0, nSims1, nTrials, stdSR=1, meanSR=0):
     out['stdErr'] = err.groupby('nTrials')['err'].std()
     out = pd.DataFrame.from_dict(out, orient='columns')
     return out
-    
+
 # code snippet 8.3 - Type I (False positive), with numerical example (Type II False negative)
 def getZStat(sr, t, sr_=0, skew=0, kurt=3):
     z = (sr-sr_)*(t-1)**.5
     z /= (1-skew*sr+(kurt-1)/4.*sr**2)**.5
     return z
-    
+
 def type1Err(z, k=1):
     #false positive rate
     alpha = ss.norm.cdf(-z)
@@ -74,7 +74,7 @@ def getTheta(sr, t, sr_=0., skew=0., kurt=3):
     theta = sr_*(t-1)**.5
     theta /= (1-skew*sr+(kurt-1)/.4*sr**2)**.5
     return theta
-    
+
 def type2Err(alpha_k, k, theta):
     #false negative rate
     z = ss.norm.ppf((1-alpha_k)**(1./k)) #Sidak's correction
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     plt.legend()
     ax.figure.savefig('/gpfs/gpfs0/deep/maxSR_across_uniform_strategies_8_1.png')
     ######### end #######################
-    
+
     # code snippet 8.2
     nTrials = list(set(np.logspace(1, 6, 1000).astype(int)))
     nTrials.sort()
@@ -111,7 +111,7 @@ if __name__ == '__main__':
     ax = stats.plot()
     ax.set_xscale('log')
     ax.figure.savefig('/gpfs/gpfs0/deep/fig82.png')
-    
+
     # code snippet 8.3
     #Numerical example
     t, skew, kurt, k, freq=1250, -3, 10, 10, 250
@@ -122,8 +122,8 @@ if __name__ == '__main__':
     print(alpha_k)
     #>>> print(alpha_k)
     #0.060760769078662125
-    
-    # code snippet 8.4 
+
+    # code snippet 8.4
     #numerical example
     t, skew, kurt, k, freq = 1250, -3, 10, 10, 250
     sr = 1.25/freq**.5
@@ -136,5 +136,4 @@ if __name__ == '__main__':
     print(beta_k)
     #>>> beta_k
     #0.039348420332089205
-    
-    
+
